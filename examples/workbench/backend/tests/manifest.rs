@@ -1,0 +1,43 @@
+//! 工作台作者清单、处理器声明与公开资源的合同测试
+
+use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest, plugin};
+use gateway_plugin_sdk::{Capability, MANIFEST_VERSION, Stage};
+
+#[test]
+fn checked_in_manifest_is_the_complete_author_contract() {
+    let manifest = manifest().unwrap();
+    assert_eq!(manifest.plugin_id().unwrap(), PLUGIN_ID);
+    assert_eq!(manifest.manifest_version, MANIFEST_VERSION);
+    assert_eq!(manifest.contributes[&Capability::Middleware].version, 6);
+    assert_eq!(manifest.contributes[&Capability::Scheduler].version, 3);
+    assert_eq!(manifest.contributes.len(), 7);
+    assert_eq!(
+        manifest.contributes[&Capability::Middleware].stages,
+        [Stage::Request, Stage::Attempt]
+    );
+    for capability in manifest
+        .contributes
+        .keys()
+        .filter(|capability| **capability != Capability::Middleware)
+    {
+        assert_eq!(
+            manifest.contributes[capability].stages,
+            capability.fixed_stages()
+        );
+    }
+}
+
+#[test]
+fn capabilities_and_typed_handlers_do_not_drift() {
+    plugin().unwrap();
+}
+
+#[test]
+fn only_the_declared_demo_resource_is_public() {
+    let manifest = manifest().unwrap();
+    assert_eq!(
+        manifest.resources.get("web/app.css").map(String::as_str),
+        Some("text/css")
+    );
+    assert_eq!(manifest.state[0].namespace, "workbench");
+}
