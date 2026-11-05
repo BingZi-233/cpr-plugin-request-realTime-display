@@ -1,0 +1,99 @@
+<script setup lang="ts">
+import type { Evidence } from '../api'
+import type { ExampleGuide, ExampleRun, UiSelectOption } from '../types'
+import { ZButton, ZInput, ZMarkdown, ZSelect } from '@codex-proxy/ui'
+import { Square } from '@lucide/vue'
+import { computed } from 'vue'
+import ExampleEvidence from './ExampleEvidence.vue'
+import ExampleResult from './ExampleResult.vue'
+
+const props = defineProps<{
+  example: ExampleGuide
+  evidence: Evidence[]
+  keyOptions: UiSelectOption[]
+  modelOptions: UiSelectOption[]
+  modelsLoading: boolean
+  modelsError: string
+  run?: ExampleRun
+  busy: boolean
+}>()
+const emit = defineEmits<{ run: [], stop: [] }>()
+defineSlots<{ actions?: () => unknown }>()
+const clientKeyId = defineModel<string>('clientKeyId', { required: true })
+const modelId = defineModel<string>('modelId', { required: true })
+const message = defineModel<string>('message', { required: true })
+const running = computed(() => props.run?.phase === 'running')
+const usesModel = computed(() => ['uppercase', 'request'].includes(props.example.action))
+const commandMarkdown = computed(() => props.example.command ? `\`\`\`sh\n${props.example.command}\n\`\`\`` : '')
+const disabled = computed(() => props.busy
+  || (usesModel.value && (!clientKeyId.value || !modelId.value || props.modelsLoading))
+  || (props.example.group === 'interactive' && !message.value.trim()))
+</script>
+
+<template>
+  <section class="grid min-w-0 content-start gap-5 p-4 pt-0 sm:px-6 sm:pb-6 lg:pt-6" :aria-label="example.title">
+    <header class="flex items-start justify-between gap-4">
+      <div class="grid min-w-0 gap-1.5">
+        <h2 class="m-0 text-z-lg font-emphasis">
+          {{ example.title }}
+        </h2>
+        <p class="m-0 max-w-3xl text-z-sm leading-relaxed text-z-text-secondary">
+          {{ example.summary }}
+        </p>
+      </div>
+      <div class="shrink-0">
+        <slot name="actions" />
+      </div>
+    </header>
+
+    <template v-if="example.group === 'interactive'">
+      <div class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(8rem,12rem)_minmax(8rem,12rem)_1fr_auto]">
+        <div v-if="usesModel" class="grid gap-2 text-z-sm text-z-text-secondary">
+          客户端 Key
+          <ZSelect v-model="clientKeyId" :options="keyOptions" :disabled="busy" placeholder="请选择可用 Key" aria-label="示例客户端 Key" />
+        </div>
+        <div v-if="usesModel" class="grid gap-2 text-z-sm text-z-text-secondary">
+          模型
+          <ZSelect v-model="modelId" :options="modelOptions" :disabled="busy || modelsLoading" :placeholder="modelsLoading ? '正在加载模型' : '请选择模型'" aria-label="示例模型" />
+        </div>
+        <div class="grid gap-2 text-z-sm text-z-text-secondary" :class="usesModel ? '' : 'xl:col-span-3'">
+          {{ example.action === 'uppercase' ? '转换前的文字' : '发送内容' }}
+          <ZInput v-model="message" :disabled="busy" maxlength="4096" aria-label="示例输入文本" @keydown.enter.prevent="!disabled && emit('run')" />
+        </div>
+        <ZButton v-if="running" @click="emit('stop')">
+          <template #icon>
+            <Square class="size-3.5" />
+          </template>停止
+        </ZButton>
+        <ZButton v-else type="primary" :disabled="disabled" @click="emit('run')">
+          {{ example.actionLabel }}
+        </ZButton>
+      </div>
+      <p v-if="usesModel && modelsError" class="m-0 text-z-sm text-z-error-text" role="alert">
+        {{ modelsError }}
+      </p>
+      <p v-if="usesModel" class="m-0 text-z-xs text-z-text-tertiary">
+        使用所选 Key 和模型执行真实请求，会产生相应的用量与费用
+      </p>
+      <p v-if="usesModel" class="m-0 text-z-xs text-z-text-secondary">
+        先在插件管理的当前配置 → 生效请求中开启{{ example.action === 'uppercase' ? '“请求中间件 · 请求开始”' : '模型路由、账号调度与请求观察' }}，并将所选 Key 纳入生效范围。
+      </p>
+      <ExampleResult :example="example" :run="run" :evidence="evidence" />
+    </template>
+
+    <template v-else>
+      <ol class="m-0 grid list-decimal gap-3 pl-5 text-z-sm leading-relaxed text-z-text-secondary marker:text-z-text-tertiary">
+        <li v-for="step in example.steps" :key="step" class="pl-1">
+          {{ step }}
+        </li>
+      </ol>
+      <ZMarkdown v-if="commandMarkdown" :source="commandMarkdown" />
+      <p class="m-0 text-z-sm text-z-text-secondary">
+        {{ example.expected }}
+      </p>
+      <ExampleResult v-if="run" :example="example" :run="run" :evidence="evidence" />
+    </template>
+
+    <ExampleEvidence :evidence="evidence" :capabilities="example.capabilities" />
+  </section>
+</template>
