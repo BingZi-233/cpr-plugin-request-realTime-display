@@ -21,32 +21,20 @@ body {
 .log-page {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 20px 24px 28px;
   color: #172033;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
-.hero {
+.toolbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
-.eyebrow {
-  margin: 0 0 8px;
+.hint {
   color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
-h1 {
-  margin: 0;
-  font-size: 30px;
-  letter-spacing: -0.03em;
-}
-.subtitle {
-  margin: 8px 0 0;
-  color: #64748b;
+  font-size: 13px;
 }
 .live {
   display: inline-flex;
@@ -157,13 +145,11 @@ td {
 }
 @media (max-width: 640px) {
   .log-page {
-    padding: 20px 14px;
+    padding: 16px 14px 22px;
   }
-  .hero {
-    display: block;
-  }
-  .live {
-    margin-top: 16px;
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .filters {
     flex-wrap: wrap;

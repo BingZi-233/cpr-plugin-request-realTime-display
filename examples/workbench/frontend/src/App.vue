@@ -15,7 +15,7 @@ let timer: ReturnType<typeof setInterval> | undefined
 async function refresh() {
   try {
     const snapshot = await getSnapshot()
-    entries.value = snapshot.facts.entries.filter(item => item.capability === 'observer')
+    entries.value = snapshot.facts.entries.filter(item => item.capability === 'observer' && item.event === 'request_completed')
     error.value = ''
   }
   catch (cause) {
@@ -47,15 +47,10 @@ onUnmounted(() => {
 <template>
   <ZConfigProvider :locale="zhHans">
     <main class="log-page">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">
-            CODEX PROXY PLUGIN
-          </p><h1>实时请求日志</h1><p class="subtitle">
-            请求到达后自动刷新，支持按密钥名称和模型筛选。
-          </p>
-        </div><span class="live"><i /> LIVE · 1s</span>
-      </header>
+      <div class="toolbar">
+        <span class="hint">自动刷新 · 按密钥名称和模型筛选</span>
+        <span class="live"><i /> LIVE · 1s</span>
+      </div>
       <section class="filters" aria-label="日志筛选">
         <input v-model="keyFilter" placeholder="密钥名称" aria-label="按密钥名称筛选"><input v-model="modelFilter" placeholder="模型" aria-label="按模型筛选"><button type="button" @click="keyFilter = ''; modelFilter = ''">
           清除筛选
@@ -68,7 +63,7 @@ onUnmounted(() => {
       </p>
       <div v-else-if="filtered.length" class="table-wrap">
         <table>
-          <thead><tr><th>时间</th><th>密钥名称</th><th>模型</th><th>请求 ID</th><th>状态</th><th>事件</th></tr></thead><tbody>
+          <thead><tr><th>时间</th><th>密钥名称</th><th>模型</th><th>请求 ID</th><th>状态</th></tr></thead><tbody>
             <tr v-for="item in filtered.slice().reverse()" :key="item.id">
               <td class="muted">
                 {{ formatTime(item.occurredAtMs) }}
@@ -76,7 +71,7 @@ onUnmounted(() => {
                 {{ item.details.clientKeyName || item.details.clientKeyId || '—' }}
               </td><td>{{ item.model || '—' }}</td><td class="mono">
                 {{ item.requestId || '—' }}
-              </td><td><span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span></td><td>{{ item.event }}</td>
+              </td><td><span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span></td>
             </tr>
           </tbody>
         </table>
