@@ -2,6 +2,10 @@
 
 这是一个面向 [codex-proxy-rs](https://github.com/zyycn/codex-proxy-rs) 的可信进程插件。它订阅宿主的请求完成事件，在插件管理页实时展示请求日志，并支持按**密钥名称**和**模型**过滤。
 
+## 在 CPR 中安装
+
+不要直接上传 GitHub 源码目录。打开 CPR 的「插件管理 → 安装 → GitHub」，填写 `BingZi-233/cpr-plugin-request-realTime-display`，选择 `v1.0.0`，再确认安装对应平台的 Release 安装包。当前 Release 提供 macOS Apple Silicon 包。
+
 ## 特性
 
 - 通过 SDK `observer` 能力接收请求完成事件，不读取密钥原文或请求正文
