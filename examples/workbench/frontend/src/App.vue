@@ -86,13 +86,17 @@ onUnmounted(() => {
           <table>
             <thead><tr><th>时间</th><th>密钥名称</th><th>模型</th><th>请求 ID</th><th>状态</th></tr></thead><tbody>
               <tr v-for="item in filtered.slice().reverse()" :key="item.id">
-                <td class="muted">
+                <td data-label="时间" class="muted">
                   {{ formatTime(item.occurredAtMs) }}
-                </td><td class="strong">
+                </td><td data-label="密钥名称" class="strong">
                   {{ item.details.clientKeyName || item.details.clientKeyId || '—' }}
-                </td><td>{{ item.model || '—' }}</td><td class="mono">
+                </td><td data-label="模型">
+                  {{ item.model || '—' }}
+                </td><td data-label="请求 ID" class="mono">
                   {{ item.requestId || '—' }}
-                </td><td><span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span></td>
+                </td><td data-label="状态">
+                  <span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span>
+                </td>
               </tr>
             </tbody>
           </table>
