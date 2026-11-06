@@ -109,26 +109,11 @@ body {
   padding: 14px;
   background: var(--z-color-fill-quaternary, #f8fafc);
 }
-.filters input {
-  box-sizing: border-box;
-  width: 100%;
+.filter-input {
   min-width: 180px;
-  border: 1px solid var(--z-color-border, #dbe2ea);
-  border-radius: 8px;
-  padding: 10px 12px;
-  outline: none;
 }
-.filters input:focus {
-  border-color: var(--z-color-primary, #6366f1);
-  box-shadow: 0 0 0 3px var(--z-color-primary-container, #e0e7ff);
-}
-.filters button {
-  border: 0;
-  border-radius: 8px;
-  padding: 10px 13px;
-  color: var(--z-color-text-secondary, #475569);
-  background: var(--z-button-secondary-bg, #f1f5f9);
-  cursor: pointer;
+.filter-clear {
+  justify-self: start;
 }
 .count {
   justify-self: end;
@@ -175,21 +160,7 @@ tbody tr:hover {
   font-family: ui-monospace, monospace;
   font-size: 12px;
 }
-.status {
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.status.passed {
-  color: var(--z-color-success-text, #15803d);
-  background: var(--z-color-success-container, #dcfce7);
-}
-.status.failed {
-  color: var(--z-color-error-text, #b91c1c);
-  background: var(--z-color-error-container, #fee2e2);
-}
-.empty {
+.empty-state {
   padding: 60px 16px;
   color: var(--z-color-text-secondary, #64748b);
   text-align: center;
@@ -214,10 +185,10 @@ tbody tr:hover {
     align-items: flex-start;
     flex-direction: column;
   }
-  .filters input {
+  .filter-input {
     min-width: 130px;
   }
-  .filters button {
+  .filter-clear {
     justify-self: start;
   }
   .count {
@@ -288,7 +259,7 @@ tbody tr:hover {
     grid-area: status;
   }
   .status {
-    display: inline-block;
+    display: inline-flex;
   }
   tbody tr + tr {
     border-top: 1px solid var(--z-color-border-secondary, #eef2f7);
@@ -305,9 +276,12 @@ tbody tr:hover {
   .filters {
     grid-template-columns: 1fr;
   }
-  .filters button,
+  .filter-clear,
   .count {
     justify-self: stretch;
+  }
+  .filter-clear {
+    width: 100%;
   }
   .count {
     text-align: left;

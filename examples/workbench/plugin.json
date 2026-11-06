@@ -3,7 +3,7 @@
   "name": "request-realtime-display",
   "displayName": "实时请求日志",
   "publisher": "codex-proxy",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "实时显示请求日志，并支持按密钥名称和模型过滤",
   "license": "Apache-2.0",
   "author": "Codex Proxy 贡献者",

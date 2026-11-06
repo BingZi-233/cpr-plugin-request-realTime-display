@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Evidence } from './api/types/workbench'
-import { ZConfigProvider } from '@codex-proxy/ui'
+import { ZButton, ZCard, ZConfigProvider, ZEmpty, ZInput, ZTag } from '@codex-proxy/ui'
 import { zhHans } from '@codex-proxy/ui/locale'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getSnapshot } from './api'
@@ -58,28 +58,31 @@ onUnmounted(() => {
         <span class="live"><i /> LIVE · 1s</span>
       </div>
       <section class="summary-grid" aria-label="请求摘要">
-        <article class="summary-card active">
+        <ZCard as="article" padding="compact" class="summary-card active">
           <span class="summary-label">全部请求</span><strong>{{ stats.total }}</strong><small>最近 64 条</small>
-        </article>
-        <article class="summary-card">
+        </ZCard>
+        <ZCard as="article" padding="compact" class="summary-card">
           <span class="summary-label">成功</span><strong>{{ stats.passed }}</strong><small>已完成请求</small>
-        </article>
-        <article class="summary-card danger">
+        </ZCard>
+        <ZCard as="article" padding="compact" class="summary-card danger">
           <span class="summary-label">失败</span><strong>{{ stats.failed }}</strong><small>需要关注</small>
-        </article>
-        <article class="summary-card">
+        </ZCard>
+        <ZCard as="article" padding="compact" class="summary-card">
           <span class="summary-label">模型</span><strong>{{ stats.models }}</strong><small>已观测模型</small>
-        </article>
+        </ZCard>
       </section>
-      <section class="log-panel" aria-label="请求日志">
+      <ZCard as="section" padding="none" class="log-panel" aria-label="请求日志">
         <div class="filters">
-          <input v-model="keyFilter" placeholder="搜索密钥名称" aria-label="按密钥名称筛选"><input v-model="modelFilter" placeholder="搜索模型" aria-label="按模型筛选"><button type="button" @click="keyFilter = ''; modelFilter = ''">
+          <ZInput v-model="keyFilter" class="filter-input" placeholder="搜索密钥名称" aria-label="按密钥名称筛选" />
+          <ZInput v-model="modelFilter" class="filter-input" placeholder="搜索模型" aria-label="按模型筛选" />
+          <ZButton class="filter-clear" variant="plain" size="small" @click="keyFilter = ''; modelFilter = ''">
             清除筛选
-          </button><span class="count">匹配 {{ filtered.length }} 条</span>
+          </ZButton>
+          <span class="count">匹配 {{ filtered.length }} 条</span>
         </div>
-        <p v-if="loading" class="empty">
+        <p v-if="loading" class="empty-state">
           正在连接实时日志…
-        </p><p v-else-if="error" class="empty error">
+        </p><p v-else-if="error" class="empty-state error">
           {{ error }}
         </p>
         <div v-else-if="filtered.length" class="table-wrap">
@@ -95,16 +98,16 @@ onUnmounted(() => {
                 </td><td data-label="请求 ID" class="mono">
                   {{ item.requestId || '—' }}
                 </td><td data-label="状态">
-                  <span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span>
+                  <ZTag class="status" :type="item.outcome === 'passed' ? 'success' : 'danger'" size="small" round>
+                    {{ item.outcome === 'passed' ? '成功' : '失败' }}
+                  </ZTag>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p v-else class="empty">
-          暂无匹配请求，发起请求后日志会实时出现在这里。
-        </p>
-      </section>
+        <ZEmpty v-else title="暂无匹配请求" description="发起请求后日志会实时出现在这里。" surface="none" />
+      </ZCard>
     </main>
   </ZConfigProvider>
 </template>
