@@ -31,6 +31,12 @@ const filtered = computed(() => entries.value.filter((item) => {
   return (!keyFilter.value || key.toLowerCase().includes(keyFilter.value.toLowerCase()))
     && (!modelFilter.value || model.toLowerCase().includes(modelFilter.value.toLowerCase()))
 }))
+const stats = computed(() => ({
+  total: entries.value.length,
+  passed: entries.value.filter(item => item.outcome === 'passed').length,
+  failed: entries.value.filter(item => item.outcome === 'failed').length,
+  models: new Set(entries.value.map(item => item.model).filter(Boolean)).size,
+}))
 function formatTime(ms: number) {
   return new Date(ms).toLocaleTimeString()
 }
@@ -51,34 +57,50 @@ onUnmounted(() => {
         <span class="hint">自动刷新 · 按密钥名称和模型筛选</span>
         <span class="live"><i /> LIVE · 1s</span>
       </div>
-      <section class="filters" aria-label="日志筛选">
-        <input v-model="keyFilter" placeholder="密钥名称" aria-label="按密钥名称筛选"><input v-model="modelFilter" placeholder="模型" aria-label="按模型筛选"><button type="button" @click="keyFilter = ''; modelFilter = ''">
-          清除筛选
-        </button><span class="count">{{ filtered.length }} 条</span>
+      <section class="summary-grid" aria-label="请求摘要">
+        <article class="summary-card active">
+          <span class="summary-label">全部请求</span><strong>{{ stats.total }}</strong><small>最近 64 条</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">成功</span><strong>{{ stats.passed }}</strong><small>已完成请求</small>
+        </article>
+        <article class="summary-card danger">
+          <span class="summary-label">失败</span><strong>{{ stats.failed }}</strong><small>需要关注</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">模型</span><strong>{{ stats.models }}</strong><small>已观测模型</small>
+        </article>
       </section>
-      <p v-if="loading" class="empty">
-        正在连接实时日志…
-      </p><p v-else-if="error" class="empty error">
-        {{ error }}
-      </p>
-      <div v-else-if="filtered.length" class="table-wrap">
-        <table>
-          <thead><tr><th>时间</th><th>密钥名称</th><th>模型</th><th>请求 ID</th><th>状态</th></tr></thead><tbody>
-            <tr v-for="item in filtered.slice().reverse()" :key="item.id">
-              <td class="muted">
-                {{ formatTime(item.occurredAtMs) }}
-              </td><td class="strong">
-                {{ item.details.clientKeyName || item.details.clientKeyId || '—' }}
-              </td><td>{{ item.model || '—' }}</td><td class="mono">
-                {{ item.requestId || '—' }}
-              </td><td><span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p v-else class="empty">
-        暂无匹配请求，发起请求后日志会实时出现在这里。
-      </p>
+      <section class="log-panel" aria-label="请求日志">
+        <div class="filters">
+          <input v-model="keyFilter" placeholder="搜索密钥名称" aria-label="按密钥名称筛选"><input v-model="modelFilter" placeholder="搜索模型" aria-label="按模型筛选"><button type="button" @click="keyFilter = ''; modelFilter = ''">
+            清除筛选
+          </button><span class="count">匹配 {{ filtered.length }} 条</span>
+        </div>
+        <p v-if="loading" class="empty">
+          正在连接实时日志…
+        </p><p v-else-if="error" class="empty error">
+          {{ error }}
+        </p>
+        <div v-else-if="filtered.length" class="table-wrap">
+          <table>
+            <thead><tr><th>时间</th><th>密钥名称</th><th>模型</th><th>请求 ID</th><th>状态</th></tr></thead><tbody>
+              <tr v-for="item in filtered.slice().reverse()" :key="item.id">
+                <td class="muted">
+                  {{ formatTime(item.occurredAtMs) }}
+                </td><td class="strong">
+                  {{ item.details.clientKeyName || item.details.clientKeyId || '—' }}
+                </td><td>{{ item.model || '—' }}</td><td class="mono">
+                  {{ item.requestId || '—' }}
+                </td><td><span class="status" :class="item.outcome">{{ item.outcome === 'passed' ? '成功' : '失败' }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else class="empty">
+          暂无匹配请求，发起请求后日志会实时出现在这里。
+        </p>
+      </section>
     </main>
   </ZConfigProvider>
 </template>
