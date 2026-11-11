@@ -10,5 +10,4 @@
 
 ## 升级说明
 
-- 提供 Linux x86_64、Linux aarch64、macOS aarch64 安装包及各自的 SHA-256 校验文件
-- 请选择与宿主运行平台一致的 `.tar.gz` 安装包
+- 只提供 Linux x86_64 安装包及 SHA-256 校验文件

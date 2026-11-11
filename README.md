@@ -4,7 +4,7 @@
 
 ## 在 CPR 中安装
 
-不要直接上传 GitHub 源码目录。打开 CPR 的「插件管理 → 安装 → GitHub」，填写 `BingZi-233/cpr-plugin-request-realTime-display`，选择 `v1.0.0`，再确认安装对应平台的 Release 安装包。当前 Release 提供 macOS Apple Silicon 包。
+不要直接上传 GitHub 源码目录。打开 CPR 的「插件管理 → 安装 → GitHub」，填写 `BingZi-233/cpr-plugin-request-realTime-display`，选择要安装的版本，再确认安装 Linux x86_64 的 `.tar.gz`。
 
 ## 特性
 
