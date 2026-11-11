@@ -2,7 +2,10 @@ use super::{
     response::{ApiError, ApiResult},
     tasks, text, workbench,
 };
-use crate::evidence::{EvidenceInput, EvidenceLog};
+use crate::{
+    evidence::{EvidenceInput, EvidenceLog},
+    request::RequestLog,
+};
 use gateway_plugin_sdk::{
     PluginFault,
     call::management::{ManagementRequest, ManagementResponse},
@@ -14,12 +17,19 @@ const MAXIMUM_BODY_BYTES: usize = 512 * 1024;
 
 pub(crate) async fn handle(
     evidence: &EvidenceLog,
+    requests: &RequestLog,
     call: TypedCall<ManagementRequest>,
 ) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    route(evidence, call).await.or_else(ApiError::into_reply)
+    route(evidence, requests, call)
+        .await
+        .or_else(ApiError::into_reply)
 }
 
-async fn route(evidence: &EvidenceLog, call: TypedCall<ManagementRequest>) -> ApiResult {
+async fn route(
+    evidence: &EvidenceLog,
+    requests: &RequestLog,
+    call: TypedCall<ManagementRequest>,
+) -> ApiResult {
     if call.request.path != "api/snapshot" {
         let route = format!("{} {}", call.request.method, call.request.path);
         let mut management = EvidenceInput::passed("management", "route_called");
@@ -33,7 +43,7 @@ async fn route(evidence: &EvidenceLog, call: TypedCall<ManagementRequest>) -> Ap
         return Err(ApiError::invalid("请求正文超过工作台限制"));
     }
     match (call.request.method.as_str(), call.request.path.as_str()) {
-        ("GET", "api/snapshot") => workbench::snapshot(evidence, call).await,
+        ("GET", "api/snapshot") => workbench::snapshot(evidence, requests, call).await,
         ("POST", "api/echo") => workbench::echo(call),
         ("POST", "api/models") => workbench::list_models(call).await,
         ("GET", "api/tasks") => tasks::get(call).await,

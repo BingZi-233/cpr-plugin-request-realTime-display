@@ -5,6 +5,7 @@ use super::{
 use crate::{
     evidence::{EvidenceInput, EvidenceLog, EvidenceSnapshot, ExampleStatus},
     host_calls,
+    request::{RequestLog, RequestRecord},
 };
 use gateway_plugin_sdk::{
     call::{
@@ -25,6 +26,7 @@ struct SnapshotResponse {
     keys_next_cursor: Option<String>,
     examples: Vec<ExampleStatus>,
     facts: EvidenceSnapshot,
+    requests: Vec<RequestRecord>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -35,6 +37,7 @@ struct EchoRequest {
 
 pub(super) async fn snapshot(
     evidence: &EvidenceLog,
+    requests: &RequestLog,
     call: TypedCall<ManagementRequest>,
 ) -> ApiResult {
     require_empty_body(&call.request, &call.payload)?;
@@ -52,12 +55,21 @@ pub(super) async fn snapshot(
             item.details.insert("clientKeyName".to_owned(), json!(name));
         }
     }
+    let mut requests = requests.snapshot();
+    for item in &mut requests {
+        if let Some(key_id) = item.client_key_id.as_deref()
+            && let Some(name) = key_names.get(key_id)
+        {
+            item.client_key_name = Some(name.clone());
+        }
+    }
     json_reply(&SnapshotResponse {
         contract_version: 1,
         keys: keys.keys,
         keys_next_cursor: keys.next_cursor,
         examples: evidence.examples(),
         facts,
+        requests,
     })
 }
 

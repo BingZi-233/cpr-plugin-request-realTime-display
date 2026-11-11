@@ -4,7 +4,10 @@ use gateway_plugin_sdk::{
     client::{MiddlewareResponse, RequestCall},
 };
 
-use super::scope::{ScopeTracker, body_has_scope_marker};
+use super::{
+    log::{RequestLog, RequestSeen},
+    scope::{ScopeTracker, body_has_scope_marker},
+};
 use crate::{
     evidence::{EvidenceInput, EvidenceLog, EvidenceOutcome},
     host_calls,
@@ -14,11 +17,12 @@ const RESPONSE_HEADER: &str = "x-cpr-request-realtime-display";
 
 pub(crate) async fn middleware(
     evidence: &EvidenceLog,
+    requests: &RequestLog,
     scope: &ScopeTracker,
     call: RequestCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
     if super::image_edit::matches(&call.request) {
-        return super::image_edit::handle(evidence, call).await;
+        return super::image_edit::handle(evidence, requests, call).await;
     }
     let request_id = call.context.request_id.clone();
     if body_has_scope_marker(&call.request.body)
@@ -41,6 +45,11 @@ pub(crate) async fn middleware(
     let model = request.head.model.clone();
     let account_id = request.head.account_id.clone();
     let client_key_id = request.head.client_key_id.clone();
+    requests.seen(RequestSeen {
+        request_id: request_id.as_deref().unwrap_or(""),
+        client_key_id: Some(client_key_id.as_str()),
+        model: model.as_deref(),
+    });
     let uppercased = if scoped && mount == MiddlewareMount::Request {
         prepare_input(&mut request)?
     } else {
@@ -108,11 +117,17 @@ pub(crate) async fn middleware(
                     .insert("affinityAccountId".to_owned(), json!(account_id));
             }
             evidence.record(item);
+            if mount == MiddlewareMount::Request && response.status >= 400 {
+                requests.fail(request_id.as_deref().unwrap_or(""));
+            }
             Ok(response)
         }
         Err(error) => {
             item.outcome = EvidenceOutcome::Failed;
             evidence.record(item);
+            if mount == MiddlewareMount::Request {
+                requests.fail(request_id.as_deref().unwrap_or(""));
+            }
             Err(error)
         }
     }

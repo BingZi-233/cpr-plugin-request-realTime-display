@@ -8,6 +8,7 @@ use gateway_plugin_sdk::{
 };
 use serde_json::{Map, Value, json};
 
+use super::log::{RequestLog, RequestSeen};
 use crate::evidence::{EvidenceInput, EvidenceLog, EvidenceOutcome};
 
 const MAX_BODY_BYTES: usize = 16 * 1024 * 1024;
@@ -38,8 +39,15 @@ pub(super) fn matches(request: &MiddlewareRequest) -> bool {
 
 pub(super) async fn handle(
     evidence: &EvidenceLog,
+    requests: &RequestLog,
     mut call: RequestCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
+    let request_id = call.context.request_id.clone().unwrap_or_default();
+    requests.seen(RequestSeen {
+        request_id: &request_id,
+        client_key_id: Some(call.request.head.client_key_id.as_str()),
+        model: call.request.head.model.as_deref(),
+    });
     let body = match convert(
         content_type(&call.request).unwrap_or_default(),
         &call.request.body,
@@ -47,7 +55,10 @@ pub(super) async fn handle(
     .await
     {
         Ok(body) => body,
-        Err(message) => return Ok(bad_request(message)),
+        Err(message) => {
+            requests.fail(&request_id);
+            return Ok(bad_request(message));
+        }
     };
     call.request.replace_body(body);
     call.request.remove_header("content-type");
@@ -63,9 +74,13 @@ pub(super) async fn handle(
                 .insert("responseStatus".to_owned(), json!(response.status));
             if response.status >= 400 {
                 item.outcome = EvidenceOutcome::Failed;
+                requests.fail(&request_id);
             }
         }
-        Err(_) => item.outcome = EvidenceOutcome::Failed,
+        Err(_) => {
+            item.outcome = EvidenceOutcome::Failed;
+            requests.fail(&request_id);
+        }
     }
     evidence.record(item);
     result

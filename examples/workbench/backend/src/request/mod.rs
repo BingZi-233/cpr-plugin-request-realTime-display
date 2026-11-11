@@ -1,10 +1,12 @@
 mod image_edit;
+mod log;
 mod middleware;
 mod observer;
 mod routing;
 mod scheduler;
 mod scope;
 
+pub(crate) use log::{RequestLog, RequestRecord};
 pub(crate) use middleware::middleware;
 pub(crate) use observer::observe;
 pub(crate) use routing::route_model;

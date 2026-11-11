@@ -1,4 +1,4 @@
-use super::scope::ScopeTracker;
+use super::{log::RequestLog, scope::ScopeTracker};
 use crate::evidence::{EvidenceInput, EvidenceLog};
 use gateway_plugin_sdk::{
     PluginFault,
@@ -9,11 +9,13 @@ use serde_json::json;
 
 pub(crate) async fn observe(
     evidence: &EvidenceLog,
+    requests: &RequestLog,
     scope: &ScopeTracker,
     call: TypedCall<Event>,
 ) -> Result<TypedReply<Empty>, PluginFault> {
     match call.request {
         Event::RequestCompleted(request) => {
+            requests.finish(&request);
             if scope.take(&request.request_id) || !request.request_id.is_empty() {
                 let mut item = EvidenceInput::passed("observer", "request_completed");
                 item.request_id = Some(&request.request_id);
