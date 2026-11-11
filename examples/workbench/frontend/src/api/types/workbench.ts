@@ -31,6 +31,27 @@ export interface WorkbenchExample {
   trigger: string
 }
 
+export type RequestPhase = 'running' | 'completed' | 'error'
+
+export interface RequestLogEntry {
+  id: string
+  startedAtMs: number
+  updatedAtMs: number
+  status: RequestPhase
+  outcome: string | null
+  clientKeyId: string | null
+  clientKeyName: string | null
+  model: string | null
+  errorCode: string | null
+  inputTokens: number | null
+  outputTokens: number | null
+  cachedTokens: number | null
+  cacheWriteTokens: number | null
+  totalTokens: number | null
+  upstreamResponseMs: number | null
+  latencyMs: number | null
+}
+
 export interface WorkbenchSnapshot {
   contractVersion: 1
   keys: WorkbenchKey[]
@@ -40,6 +61,7 @@ export interface WorkbenchSnapshot {
     latest: Record<string, Evidence>
     entries: Evidence[]
   }
+  requests: RequestLogEntry[]
 }
 
 export interface SavedTask {

@@ -2,7 +2,7 @@ use crate::{
     authentication, command,
     evidence::EvidenceLog,
     management,
-    request::{self, ScopeTracker},
+    request::{self, RequestLog, ScopeTracker},
 };
 use gateway_plugin_sdk::client::{AuthorError, ComposedPlugin, PluginBuilder, methods};
 use std::sync::Arc;
@@ -14,24 +14,29 @@ use std::sync::Arc;
 /// 清单与处理器声明不一致时返回错误。
 pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
     let evidence = Arc::new(EvidenceLog::default());
+    let requests = Arc::new(RequestLog::default());
     let scope = Arc::new(ScopeTracker::default());
     let middleware_evidence = Arc::clone(&evidence);
+    let middleware_requests = Arc::clone(&requests);
     let middleware_scope = Arc::clone(&scope);
     let route_evidence = Arc::clone(&evidence);
     let route_scope = Arc::clone(&scope);
     let schedule_evidence = Arc::clone(&evidence);
     let schedule_scope = Arc::clone(&scope);
     let request_evidence = Arc::clone(&evidence);
+    let request_requests = Arc::clone(&requests);
     let request_scope = Arc::clone(&scope);
     let command_evidence = Arc::clone(&evidence);
     let frontend_evidence = Arc::clone(&evidence);
     let management_evidence = Arc::clone(&evidence);
+    let management_requests = Arc::clone(&requests);
 
     PluginBuilder::from_json(include_bytes!("../../plugin.json"))?
         .middleware(move |call| {
             let evidence = Arc::clone(&middleware_evidence);
+            let requests = Arc::clone(&middleware_requests);
             let scope = Arc::clone(&middleware_scope);
-            async move { request::middleware(&evidence, &scope, call).await }
+            async move { request::middleware(&evidence, &requests, &scope, call).await }
         })?
         .on(methods::ROUTE_MODEL, move |call| {
             let evidence = Arc::clone(&route_evidence);
@@ -45,8 +50,9 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
         })?
         .on(methods::OBSERVE, move |call| {
             let evidence = Arc::clone(&request_evidence);
+            let requests = Arc::clone(&request_requests);
             let scope = Arc::clone(&request_scope);
-            async move { request::observe(&evidence, &scope, call).await }
+            async move { request::observe(&evidence, &requests, &scope, call).await }
         })?
         .on(
             methods::FRONTEND_IDENTIFIER,
@@ -58,7 +64,8 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
         })?
         .management(management::registration(), move |call| {
             let evidence = Arc::clone(&management_evidence);
-            async move { management::handle(&evidence, call).await }
+            let requests = Arc::clone(&management_requests);
+            async move { management::handle(&evidence, &requests, call).await }
         })?
         .command_line(command::command_registration(), move |call| {
             let evidence = Arc::clone(&command_evidence);

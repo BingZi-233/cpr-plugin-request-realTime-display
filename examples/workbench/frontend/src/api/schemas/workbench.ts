@@ -1,4 +1,4 @@
-import type { Evidence, WorkbenchExample, WorkbenchKey, WorkbenchSnapshot } from '../types/workbench'
+import type { Evidence, RequestLogEntry, WorkbenchExample, WorkbenchKey, WorkbenchSnapshot } from '../types/workbench'
 import { exampleStatuses } from '@/constants/workbench'
 import { nonNegativeInteger, nullableString, record, string, stringArray } from '../validation'
 
@@ -27,6 +27,36 @@ function parseEvidence(value: unknown): Evidence {
   }
 }
 
+function nullableNumber(value: unknown, label: string): number | null {
+  if (value == null)
+    return null
+  return nonNegativeInteger(value, label)
+}
+
+function parseRequest(value: unknown): RequestLogEntry {
+  const item = record(value, '请求日志')
+  if (item.status !== 'running' && item.status !== 'completed' && item.status !== 'error')
+    throw new Error('请求状态格式无效')
+  return {
+    id: string(item.id, '请求 ID'),
+    startedAtMs: nonNegativeInteger(item.startedAtMs, '开始时间'),
+    updatedAtMs: nonNegativeInteger(item.updatedAtMs, '更新时间'),
+    status: item.status,
+    outcome: nullableString(item.outcome, '终态'),
+    clientKeyId: nullableString(item.clientKeyId, '密钥 ID'),
+    clientKeyName: nullableString(item.clientKeyName, '密钥名称'),
+    model: nullableString(item.model, '模型'),
+    errorCode: nullableString(item.errorCode, '错误码'),
+    inputTokens: nullableNumber(item.inputTokens, '输入 Token'),
+    outputTokens: nullableNumber(item.outputTokens, '输出 Token'),
+    cachedTokens: nullableNumber(item.cachedTokens, '缓存读取 Token'),
+    cacheWriteTokens: nullableNumber(item.cacheWriteTokens, '缓存写入 Token'),
+    totalTokens: nullableNumber(item.totalTokens, '总 Token'),
+    upstreamResponseMs: nullableNumber(item.upstreamResponseMs, '上游耗时'),
+    latencyMs: nullableNumber(item.latencyMs, '总耗时'),
+  }
+}
+
 function parseExample(value: unknown): WorkbenchExample {
   const item = record(value, '基础示例')
   if (typeof item.status !== 'string' || !exampleStatuses.has(item.status))
@@ -48,7 +78,7 @@ export function parseSnapshot(input: unknown): WorkbenchSnapshot {
   const latest = record(facts.latest, '最新执行事实')
   if (value.contractVersion !== 1)
     throw new Error('工作台合同版本不受支持')
-  if (!Array.isArray(value.keys) || !Array.isArray(value.examples) || !Array.isArray(facts.entries))
+  if (!Array.isArray(value.keys) || !Array.isArray(value.examples) || !Array.isArray(facts.entries) || !Array.isArray(value.requests))
     throw new Error('工作台快照格式无效')
   return {
     contractVersion: 1,
@@ -59,5 +89,6 @@ export function parseSnapshot(input: unknown): WorkbenchSnapshot {
       latest: Object.fromEntries(Object.entries(latest).map(([key, item]) => [key, parseEvidence(item)])),
       entries: facts.entries.map(parseEvidence),
     },
+    requests: value.requests.map(parseRequest),
   }
 }
