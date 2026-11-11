@@ -12,6 +12,7 @@ use gateway_plugin_sdk::call::observation::{RequestCompleted, RequestOutcome};
 use serde::Serialize;
 
 const MAXIMUM_REQUESTS: usize = 200;
+const CONVERSATION: &str = "generate";
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -44,6 +45,7 @@ pub(crate) struct RequestRecord {
 
 pub(crate) struct RequestSeen<'a> {
     pub request_id: &'a str,
+    pub operation: &'a str,
     pub client_key_id: Option<&'a str>,
     pub model: Option<&'a str>,
 }
@@ -55,7 +57,7 @@ pub(crate) struct RequestLog {
 
 impl RequestLog {
     pub fn seen(&self, seen: RequestSeen<'_>) {
-        if seen.request_id.is_empty() {
+        if !is_conversation(seen.operation) || seen.request_id.is_empty() {
             return;
         }
         let mut records = self.lock();
@@ -92,8 +94,8 @@ impl RequestLog {
         trim(&mut records);
     }
 
-    pub fn fail(&self, request_id: &str) {
-        if request_id.is_empty() {
+    pub fn fail(&self, request_id: &str, operation: &str) {
+        if !is_conversation(operation) || request_id.is_empty() {
             return;
         }
         let mut records = self.lock();
@@ -128,7 +130,7 @@ impl RequestLog {
     }
 
     pub fn finish(&self, request: &RequestCompleted) {
-        if request.request_id.is_empty() {
+        if !is_conversation(&request.operation) || request.request_id.is_empty() {
             return;
         }
         let mut records = self.lock();
@@ -235,6 +237,10 @@ fn trim(records: &mut VecDeque<RequestRecord>) {
     while records.len() > MAXIMUM_REQUESTS {
         records.pop_front();
     }
+}
+
+fn is_conversation(operation: &str) -> bool {
+    operation == CONVERSATION
 }
 
 fn outcome_name(outcome: RequestOutcome) -> &'static str {

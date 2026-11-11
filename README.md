@@ -1,6 +1,6 @@
 # Codex Proxy 实时请求日志插件
 
-这是一个面向 [codex-proxy-rs](https://github.com/zyycn/codex-proxy-rs) 的可信进程插件。它记录每一次请求：开始时记为进行中，完成或失败后更新同一条，并统计 tok/s、输入缓存率和写入缓存率。
+这是一个面向 [codex-proxy-rs](https://github.com/zyycn/codex-proxy-rs) 的可信进程插件。它只记录对话请求（`generate`）：开始时记为进行中，完成或失败后更新同一条，并统计 tok/s、输入缓存率和写入缓存率。模型列表等 `query` 请求不会进入日志。
 
 ## 在 CPR 中安装
 
@@ -8,7 +8,7 @@
 
 ## 特性
 
-- 请求进入中间件时记为进行中，`request_completed` 到达后把同一条更新为完成或错误
+- 只记录 `generate` 对话请求。模型列表等查询的 operation 是 `query`，不会写入日志
 - 管理页每秒刷新，展示时间、状态、密钥名称、模型、输入输出 Token、tok/s、缓存率和请求 ID
 - tok/s 按输出 Token / 上游响应耗时计算；没有上游耗时时用总耗时。输入缓存率是缓存读取 / 输入，写入缓存率是缓存写入 / 输入
 - 日志保留最近 200 条，不读取密钥原文或请求正文

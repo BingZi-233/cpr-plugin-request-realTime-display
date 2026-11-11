@@ -43,8 +43,10 @@ pub(super) async fn handle(
     mut call: RequestCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
     let request_id = call.context.request_id.clone().unwrap_or_default();
+    let operation = call.request.head.operation.clone();
     requests.seen(RequestSeen {
         request_id: &request_id,
+        operation: &operation,
         client_key_id: Some(call.request.head.client_key_id.as_str()),
         model: call.request.head.model.as_deref(),
     });
@@ -56,7 +58,7 @@ pub(super) async fn handle(
     {
         Ok(body) => body,
         Err(message) => {
-            requests.fail(&request_id);
+            requests.fail(&request_id, &operation);
             return Ok(bad_request(message));
         }
     };
@@ -74,12 +76,12 @@ pub(super) async fn handle(
                 .insert("responseStatus".to_owned(), json!(response.status));
             if response.status >= 400 {
                 item.outcome = EvidenceOutcome::Failed;
-                requests.fail(&request_id);
+                requests.fail(&request_id, &operation);
             }
         }
         Err(_) => {
             item.outcome = EvidenceOutcome::Failed;
-            requests.fail(&request_id);
+            requests.fail(&request_id, &operation);
         }
     }
     evidence.record(item);
