@@ -144,7 +144,7 @@ onUnmounted(() => {
   <ZConfigProvider :locale="zhHans">
     <main class="log-page">
       <div class="toolbar">
-        <span class="hint">请求开始即记录，完成或出错时更新同一条</span>
+        <span class="hint">只记录对话请求，完成或出错时更新同一条</span>
         <span class="count">{{ rows.length }} 条</span>
         <span class="live"><i /> LIVE · 1s</span>
       </div>

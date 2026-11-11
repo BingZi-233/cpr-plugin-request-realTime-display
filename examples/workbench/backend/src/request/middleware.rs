@@ -45,8 +45,10 @@ pub(crate) async fn middleware(
     let model = request.head.model.clone();
     let account_id = request.head.account_id.clone();
     let client_key_id = request.head.client_key_id.clone();
+    let operation = request.head.operation.clone();
     requests.seen(RequestSeen {
         request_id: request_id.as_deref().unwrap_or(""),
+        operation: &operation,
         client_key_id: Some(client_key_id.as_str()),
         model: model.as_deref(),
     });
@@ -118,7 +120,7 @@ pub(crate) async fn middleware(
             }
             evidence.record(item);
             if mount == MiddlewareMount::Request && response.status >= 400 {
-                requests.fail(request_id.as_deref().unwrap_or(""));
+                requests.fail(request_id.as_deref().unwrap_or(""), &operation);
             }
             Ok(response)
         }
@@ -126,7 +128,7 @@ pub(crate) async fn middleware(
             item.outcome = EvidenceOutcome::Failed;
             evidence.record(item);
             if mount == MiddlewareMount::Request {
-                requests.fail(request_id.as_deref().unwrap_or(""));
+                requests.fail(request_id.as_deref().unwrap_or(""), &operation);
             }
             Err(error)
         }

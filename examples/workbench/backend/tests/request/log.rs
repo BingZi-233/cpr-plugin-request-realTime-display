@@ -157,3 +157,69 @@ async fn request_log_keeps_an_error_row_when_the_downstream_fails() {
     assert_eq!(row["errorCode"], "upstream_unavailable");
     assert_eq!(row["inputTokens"], 12);
 }
+
+#[tokio::test]
+async fn request_log_ignores_model_catalog_queries() {
+    let mut peer = Peer::start().await;
+    let frame = peer
+        .call_with(
+            "middleware.handle",
+            Stage::Request,
+            json!({
+                "request_id": "test-request",
+                "settings_sources": null,
+                "client_key_id": "test-key",
+                "account_group_ids": [],
+                "mount": "request",
+                "operation": "query",
+                "protocol": "openai",
+                "endpoint": "/v1/models",
+                "transport": "http_json",
+                "headers": []
+            }),
+            Vec::new(),
+            |method, _, _| {
+                assert_eq!(method, "host.middleware.next");
+                Ok((
+                    json!({"response":"response-1","protocol":"openai","status":503,"headers":[]}),
+                    Vec::new(),
+                ))
+            },
+        )
+        .await;
+    result(&frame);
+    assert!(matches!(peer.receive().await.message, Message::End { .. }));
+    assert!(
+        peer.snapshot().await["requests"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+
+    let frame = peer
+        .call(
+            "observer.observe",
+            Stage::Observation,
+            json!({
+                "event": "request_completed",
+                "data": {
+                    "event_id": "models",
+                    "request_id": "test-request",
+                    "config_revision": 1,
+                    "operation": "query",
+                    "completed_at_ms": 1,
+                    "terminal": {"outcome": "succeeded", "send_state": "sent", "attempt_count": 1},
+                    "usage": {}
+                }
+            }),
+            Vec::new(),
+        )
+        .await;
+    result(&frame);
+    assert!(
+        peer.snapshot().await["requests"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
